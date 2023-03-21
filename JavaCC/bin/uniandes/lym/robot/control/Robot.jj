@@ -1,0 +1,336 @@
+/*
+Gramatica para el Robot:
+Autor: Alejandro Arango
+Modificado por: Silvia Takahashi
+Modificado por: Juan Pablo Morales.
+Agregadas producciones para manejar globos
+Modificado por Silvia Takahashi
+
+
+ **/
+
+
+options 
+{
+  
+	LOOKAHEAD=1; 
+	IGNORE_CASE=true;
+	STATIC = false;
+	
+}
+   
+
+PARSER_BEGIN(Robot)
+
+package uniandes.lym.robot.control;
+
+import uniandes.lym.robot.kernel.*;
+import uniandes.lym.robot.view.Console;
+ 
+import java.awt.Point;
+import java.io.*;
+import java.util.Vector;
+import java.util.LinkedList;
+
+@SuppressWarnings("serial")
+public class Robot 
+{
+
+
+	private RobotWorldDec world;
+	
+	
+	void setWorld(RobotWorld w) {
+		world = (RobotWorldDec) w;	
+	}
+
+	String salida=new String();
+}
+PARSER_END(Robot)
+
+SKIP:
+{
+	" "
+	|	"\r"
+	|	"\t"
+	| "\n"
+}
+
+TOKEN: /* Nombres de Comandos */
+{
+
+< ASSIGNTO : "assignTo" >
+| < GOTO : "goto" >
+| < MOVE : "move" >
+| < TURN : "turn" >
+| < FACE : "face" >
+| < PUT : "put" >
+| < PICK : "pick" >
+| < MOVETOTHE : "moveToThe" >
+| < MOVEINDIR : "moveInDir" >
+| < JUMPTOTHE : "jumpToThe" >
+| < JUMPINDIR : "jumpInDir" >
+| < NOP : "nop" >
+
+}
+
+TOKEN: /* Palabras reservadas */
+{
+  < ROBOTR : "ROBOTR" >
+| < VARS  : "VARS" >
+| < PROCS  : "PROCS" > 
+| <BALLOONS:"BALLOONS">
+| <CHIPS:"CHIPS">	
+
+}
+
+TOKEN:/* Partes de las Estructuras de control */
+{
+ < IF : "if" >
+| < THEN : "then" >
+| < ELSE : "else" >
+| < WHILE : "while" >
+| < DO : "do" >
+| < REPEAT : "repeat" > 
+
+}
+
+TOKEN:/* Condiciones */
+{
+ < FACING  : "facing" >
+| < CANPUT : "canPut" >
+| < CANPICK : "canPick" >
+| < CANMOVEINDIR : "canMoveInDir" >
+| < CANJUMPINDIR : "canJumpInDir" >
+| < CANMOVETOTHE : "canMoveToThe" >
+| < CANJUMPTOTHE : "canJumpToThe" >
+| < NOT : "not" >
+ 
+}
+
+TOKEN: /*Elementos de las condiciones*/
+{
+< POSITION : ("FRONT"|"RIGHT"|"LEFT"|"BACK"|"ARROUND") >
+| < DIRECTION : ("NORTH"|"SOUTH"|"EAST"|"WEST") > 
+}
+
+TOKEN : /* Otros */
+{
+ < #DIGIT: ["0"-"9"] >
+| < #MAY: ["A"-"Z"] >
+| < #MIN: ["a"-"z"] >
+| < NOMB: ( (<MIN>|<MAY>)(<MAY>|<MIN>|<DIGIT>)* )>
+| < NUM: (<DIGIT>)+ >
+| < DPUNTOS : ":">
+| < PCOMA : ";" >
+| < COMA : "," >
+
+        
+}
+
+
+void oneline():
+{}
+{
+  < ROBOTR > (variables())? (procedures())? (instructions())?
+}
+
+
+void variables():
+{}
+{
+  < VARS > (variable())?
+}
+
+void variable():
+{}
+{
+  < NOMB >(< COMA ><NOMB>)*< PCOMA >
+}
+
+void procedures():
+{}
+{
+  < PROCS > (procedure())*
+}
+
+void procedure():
+{}
+{
+	< NOMB >"["parameters()instructions()"]"
+  }
+
+void parameters():
+{}
+{
+  "|"< NOMB > (< COMA ><NOMB >)*"|"
+  
+}
+
+void instructions():
+{}
+{
+  "["instruction()(< PCOMA >instructions())*"]"
+}
+void instruction():
+{}
+{
+	(command()|cstructure()|proccall())
+}
+void command():
+{}
+{
+	(	  assignto()
+	| Goto()
+	| move()
+	| turn()
+	| face()
+	| put()
+	| pick()
+	| movetothe()
+	| moveindir()
+	| jumptothe()
+	| jumpindir()
+	| nop()
+)
+	
+}
+
+void assignto():
+{}
+{
+  < ASSIGNTO > < DPUNTOS ><NOMB ><NUM> 
+}
+
+void Goto():
+{}
+{
+ < GOTO > (< NUM >|< NOMB >)(< NUM >|< NOMB >) 
+}
+
+void move():
+{}
+{
+  < MOVE >(< NUM >|< NOMB >)
+}
+
+void turn():
+{}
+{
+  < TURN ><POSITION >
+}
+
+void face():
+{}
+{
+  < FACE ><DIRECTION >
+}
+void put():
+{}
+{
+  < PUT >(< BALLOONS >| < CHIPS >)(< NUM >|< NOMB >)
+}
+void pick():
+{}
+{
+  < PICK >(< BALLOONS >| < CHIPS >)(< NUM >|< NOMB >)
+}
+
+
+
+
+
+
+
+
+
+
+
+
+//NO ELIMINAR POR AHORA, PODRÍA SER UTIL MÁS TARDE.
+
+	//boolean command(uniandes.lym.robot.view.Console sistema) :
+	/*boolean command(Console sistema):
+	{	
+		
+		int x,y;
+		salida=new String();	
+	}
+
+	
+	{
+		(		  (
+		   <RIGHT> "(" ")" {world.turnRight();salida = "Command: Turnright";}
+		| 	<MOV>  "(" x=num() ")" {world.moveForward(x,false);salida = "Command: Moveforward ";}  
+		| 	<HOP>  "(" x=num() ")" {world.moveForward(x,true);salida = "Command:Jumpforward ";}
+		| 	<GO>  "(" x=num() "," y=num()")" {world.setPostion(x,y);salida = "Command:GO ";}  
+		|  <PUT> "("  put() ")"					  			
+		|  <PICK> "(" get()  ")"	
+	    |  < POP > "(" x=num() ")" {world.popBalloons(x); salida = "Comando:  Pop";}
+		) ";" 
+
+		{
+		    try {
+	    			 Thread.sleep(900);
+	    	    } catch (InterruptedException e) {
+	    			        System.err.format("IOException: %s%n", e);
+	    		    }
+	    			 
+			sistema.printOutput(salida);
+			return true;
+		})+
+
+    	| <EOF> {return false;} 
+	}
+
+	void put() :
+	{
+		int f=1;	
+	}
+	{
+		( <CHIPS>    "," f=num() {world.putChips(f); salida = "Command:  Put Chips"; })
+		|  	  ( <BALLOONS>   "," f=num() {world.putBalloons(f); salida = "Command:  Put Balloons";})	 
+
+	}
+
+	void get() :
+	{
+		int f=1;	
+	}
+	{
+		( <CHIPS>   "," f=num() {world.pickChips(f);salida = "Command:  Pick chips";})
+		|  	  ( <BALLOONS>   "," f=num() {world.grabBalloons(f);salida="Command:  Pick balloons";})	 
+
+	}
+
+	
+	
+
+	/**
+	 * Unsigned decimal number
+	 * @return the corresponding value of the string
+	 * @error  corresponding value is too large
+	 */
+
+/*
+
+	int num() throws Error:
+	{	
+		int total=1;
+	}
+	{
+		<NUM>
+		{
+			try 
+			{
+				total = Integer.parseInt(token.image);
+			} 
+			catch (NumberFormatException ee) 
+			{
+				throw new Error("Number out of bounds: "+token.image+" !!");
+			}
+			return total;
+		}
+	}
+*/
+	

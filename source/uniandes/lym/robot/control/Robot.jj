@@ -301,7 +301,7 @@ void theif():
 void thewhile():
 {}
 {
-  < WHILE >< DPUNTOS >instruction()< COMA >< DO >< DPUNTOS > instructions()
+  < WHILE >< DPUNTOS > condicional()< COMA >< DO >< DPUNTOS > instructions()
 }
 
 void repeat():

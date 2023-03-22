@@ -38,7 +38,7 @@ import java.util.List;
 public class Robot 
 {
 
-	List lista_nodes = new ArrayList();
+	List lista_procs = new ArrayList();
 	private RobotWorldDec world;
 
 	
@@ -160,9 +160,11 @@ void procedures():
 }
 
 void procedure():
-{}
+{Token procedimiento;}
 {
-	< NOMB >"["parameters()instructions()"]"
+  procedimiento = < NOMB >
+  
+	< NOMB >"["parameters()instructions()"]" {lista_procs.add(procedimiento.image);}
   }
 
 void parameters():
@@ -290,10 +292,10 @@ void theif():
 	< DPUNTOS >
 	< THEN >
 	< DPUNTOS >
-	instructions()
+	(instructions()|cstructure())
 	< ELSE >
 	< DPUNTOS >
-	instructions()
+	(instructions()|cstructure())
 }
 
 void thewhile():
@@ -326,13 +328,13 @@ void condicional():
 void facing():
 {}
 {
-  < FACING >< DIRECTION >
+  < FACING ><DPUNTOS >< DIRECTION >
 }
   
 void canput():
 {}
 {
-  < CANPUT >(< NUM >| < NOMB >)< COMA >(< BALLOONS >| < CHIPS >)
+  < CANPUT ><DPUNTOS >(< NUM >| < NOMB >)< COMA >(< BALLOONS >| < CHIPS >)
 }
    
 void canpick():
@@ -372,10 +374,16 @@ void not():
 	< NOT >< DPUNTOS >condicional()
 }
 
-void proccall():
-{}
+void proccall() throws Error:
+{Token proc;}
 {
-	< NOMB ><DPUNTOS >arguments()	
+  	proc = < NOMB >
+	< NOMB ><DPUNTOS >arguments()
+{
+			if (!lista_procs.contains(proc.image))
+				{ throw new Error("Función no definida: "+proc.image+" !!"); }
+			}
+	
 }
 
 void arguments():
